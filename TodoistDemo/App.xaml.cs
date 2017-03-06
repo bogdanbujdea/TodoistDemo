@@ -6,7 +6,9 @@ using Windows.UI.Xaml.Controls;
 using Caliburn.Micro;
 using Microsoft.EntityFrameworkCore;
 using TodoistDemo.Core.Communication;
+using TodoistDemo.Core.Communication.WebServices;
 using TodoistDemo.Core.Services;
+using TodoistDemo.Core.Storage;
 using TodoistDemo.Core.Storage.Database;
 using TodoistDemo.ViewModels;
 using TodoistDemo.Views;
@@ -44,6 +46,7 @@ namespace TodoistDemo
             _container.RegisterPerRequest(typeof(IItemsRepository), "ItemsRepository", typeof(ItemsRepository));
             _container.RegisterPerRequest(typeof(IUserRepository), "UserRepository", typeof(UserRepository));
             _container.RegisterPerRequest(typeof(ITaskManager), "TaskManager", typeof(TaskManager));
+            _container.RegisterPerRequest(typeof(IAppSettings), "AppSettings", typeof(AppSettings));
 
             _container.PerRequest<ItemsViewModel>();
         }

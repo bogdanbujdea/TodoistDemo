@@ -39,7 +39,7 @@
                 </StackPanel>
             </Grid>
             <Grid Grid.Row="1">
-                <ListView x:Name="Items">
+                <ListView x:Name="Items" SelectionMode="None">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid d:DataContext="{d:DesignInstance apiModels:Item}">

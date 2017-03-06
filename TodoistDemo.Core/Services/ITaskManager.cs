@@ -8,6 +8,6 @@ namespace TodoistDemo.Core.Services
     {
         Task<List<Item>> RetrieveTasksAsync();
         Task AddTasksAsync(List<Item> items);
-        Task<List<Item>> RetrieveTasksFromWebAsync(string token);
+        Task<List<Item>> RetrieveTasksFromWebAsync();
     }
 }

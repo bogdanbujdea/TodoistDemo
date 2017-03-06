@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
+using TodoistDemo.Core.Communication;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
+using TodoistDemo.Core.Storage;
 using TodoistDemo.Core.Storage.Database;
 
 namespace TodoistDemo.ViewModels
@@ -13,26 +16,28 @@ namespace TodoistDemo.ViewModels
     {
         private readonly ITaskManager _taskManager;
         private readonly IUserRepository _userRepository;
+        private readonly IAppSettings _appSettings;
         private string _authToken;
         private ObservableCollection<Item> _items;
         private bool _tokenIsVisible;
         private string _avatarUri;
         private string _username;
 
-        public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository)
+        public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository, IAppSettings appSettings)
         {
             _taskManager = taskManager;
             _userRepository = userRepository;
+            _appSettings = appSettings;
+            Items = new ObservableCollection<Item>();
         }
 
         protected override async void OnActivate()
         {
             base.OnActivate();
-            Items = new ObservableCollection<Item>(await _taskManager.RetrieveTasksAsync());
-            var user = await _userRepository.GetUser();
-            if (user != null && string.IsNullOrWhiteSpace(user.Token) == false)
+            await UpdateItems();
+            AuthToken = _appSettings.GetData<string>(SettingsKey.UserToken);
+            if (string.IsNullOrWhiteSpace(AuthToken) == false)
             {
-                AuthToken = user.Token;
                 await Sync();
             }
         }
@@ -46,11 +51,9 @@ namespace TodoistDemo.ViewModels
                     await new MessageDialog("Please type a valid token").ShowAsync();
                     return;
                 }
-                var items = await _taskManager.RetrieveTasksFromWebAsync(AuthToken);
-                var user = await _userRepository.GetUser();
-                AvatarUri = user.AvatarBig;
-                Username = user.FullName;
-                Items = new ObservableCollection<Item>(items);
+                _appSettings.SetData(SettingsKey.UserToken, AuthToken);
+                await SetUserInfo();
+                await UpdateItems();
                 TokenIsVisible = true;
             }
             catch (ApiException apiException)
@@ -61,6 +64,64 @@ namespace TodoistDemo.ViewModels
             {
                 Debug.WriteLine(ex.Message);
             }
+        }
+
+        private async Task UpdateItems()
+        {
+            var items = await _taskManager.RetrieveTasksFromWebAsync();
+            var visibleItems = items
+                .Where(i => i.Checked == false && string.IsNullOrWhiteSpace(i.Content) == false)
+                .ToList();
+            if (Items.Count == 0)
+            {
+                Items = new ObservableCollection<Item>(visibleItems.OrderBy(i => i.Content.ToLower()));
+                return;
+            }
+            foreach (var item in items.Where(i => i.Checked))
+            {
+                var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
+                if (existingItem != null)
+                    Items.Remove(existingItem);
+            }
+            foreach (var item in visibleItems)
+            {
+                var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
+                if (existingItem != null)
+                {
+                    if (ItemIsUpdated(existingItem, item))
+                    {
+                        Items.Remove(existingItem);
+                        Insert(item);
+                    }
+                }
+                else
+                    Insert(item);
+            }
+        }
+
+        private bool ItemIsUpdated(Item existingItem, Item updatedItem)
+        {
+            return existingItem.Checked != updatedItem.Checked || existingItem.Content != updatedItem.Content;
+        }
+
+        private void Insert(Item item)
+        {
+            for (int index = 0; index < Items.Count; index++)
+            {
+                if (string.CompareOrdinal(Items[index].Content.ToLower(), item.Content.ToLower()) > 0)
+                {
+                    Items.Insert(index, item);
+                    return;
+                }
+            }
+            Items.Add(item);
+        }
+
+        private async Task SetUserInfo()
+        {
+            var user = await _userRepository.GetUser();
+            AvatarUri = user?.AvatarBig;
+            Username = user?.FullName;
         }
 
         public string AvatarUri

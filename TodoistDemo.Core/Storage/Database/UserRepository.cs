@@ -18,6 +18,8 @@ namespace TodoistDemo.Core.Storage.Database
 
         public async Task SaveUser(User user)
         {
+            if (user == null)
+                return;
             using (var db = new TodoistContext())
             {
                 await db.Database.ExecuteSqlCommandAsync("delete from users");

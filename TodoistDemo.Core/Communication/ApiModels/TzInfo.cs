@@ -1,4 +1,7 @@
-﻿public class TzInfo
+﻿namespace TodoistDemo.Core.Communication.ApiModels
 {
-    public string Timezone { get; set; }
+    public class TzInfo
+    {
+        public string Timezone { get; set; }
+    }
 }

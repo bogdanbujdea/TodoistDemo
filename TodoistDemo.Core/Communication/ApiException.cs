@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TodoistDemo.Core.Services
+namespace TodoistDemo.Core.Communication
 {
     public class ApiException : Exception
     {

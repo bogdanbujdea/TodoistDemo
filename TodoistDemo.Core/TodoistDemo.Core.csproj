@@ -135,13 +135,18 @@
     <Compile Include="Storage\Database\IUserRepository.cs" />
     <Compile Include="Storage\Database\TodoistContext.cs" />
     <Compile Include="Storage\Database\UserRepository.cs" />
+    <Compile Include="Storage\AppSettings.cs" />
+    <Compile Include="Storage\IAppSettings.cs" />
+    <Compile Include="Storage\SettingsKey.cs" />
     <Compile Include="Validation\Reports\Operation\BasicReport.cs" />
     <Compile Include="Validation\Reports\Operation\ValidationReport.cs" />
     <Compile Include="Validation\Reports\Web\BasicWebReport.cs" />
     <Compile Include="Validation\Reports\Web\FailedRequest.cs" />
     <EmbeddedResource Include="Properties\TodoistDemo.Core.rd.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Storage\LocalSettings\" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
