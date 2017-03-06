@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
-using Microsoft.EntityFrameworkCore;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
 using TodoistDemo.Core.Storage.Database;
@@ -13,42 +11,55 @@ namespace TodoistDemo.ViewModels
 {
     public class ItemsViewModel : ViewModelBase
     {
-        private readonly IAccountManager _accountManager;
+        private readonly ITaskManager _taskManager;
+        private readonly IUserRepository _userRepository;
         private string _authToken;
         private ObservableCollection<Item> _items;
         private bool _tokenIsVisible;
         private string _avatarUri;
         private string _username;
 
-        public ItemsViewModel(IAccountManager accountManager)
+        public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository)
         {
-            _accountManager = accountManager;
+            _taskManager = taskManager;
+            _userRepository = userRepository;
         }
 
         protected override async void OnActivate()
         {
             base.OnActivate();
-            using (var db = new TodoistContext())
+            Items = new ObservableCollection<Item>(await _taskManager.RetrieveTasksAsync());
+            var user = await _userRepository.GetUser();
+            if (user != null && string.IsNullOrWhiteSpace(user.Token) == false)
             {
-                if (FirstTimeUse(db))
-                {
-                    return;
-                }
-                var user = await db.Users.FirstOrDefaultAsync();
-                if (string.IsNullOrWhiteSpace(user?.Token))
-                {
-                    await Sync(true);
-                    return;
-                }
                 AuthToken = user.Token;
-                var dbItems = await db.Items.ToListAsync();
-                var items = dbItems.Select(i => new Item
-                {
-                    Checked = i.Checked,
-                    Content = i.Content
-                }).ToList();
-                Items = new ObservableCollection<Item>(items);
                 await Sync();
+            }
+        }
+
+        public async Task Sync()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(AuthToken))
+                {
+                    await new MessageDialog("Please type a valid token").ShowAsync();
+                    return;
+                }
+                var items = await _taskManager.RetrieveTasksFromWebAsync(AuthToken);
+                var user = await _userRepository.GetUser();
+                AvatarUri = user.AvatarBig;
+                Username = user.FullName;
+                Items = new ObservableCollection<Item>(items);
+                TokenIsVisible = true;
+            }
+            catch (ApiException apiException)
+            {
+                await new MessageDialog("Sync failed with error:" + apiException.ErrorMessage).ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
@@ -61,11 +72,6 @@ namespace TodoistDemo.ViewModels
                 _avatarUri = value;
                 NotifyOfPropertyChange(() => AvatarUri);
             }
-        }
-
-        private bool FirstTimeUse(TodoistContext db)
-        {
-            return !db.Items.Any() || !db.Users.Any();
         }
 
         public string AuthToken
@@ -109,55 +115,6 @@ namespace TodoistDemo.ViewModels
                 if (value == _username) return;
                 _username = value;
                 NotifyOfPropertyChange(() => Username);
-            }
-        }
-
-        public async Task Sync(bool clearData = false)
-        {
-            try
-            {
-                var syncData = await _accountManager.LoginAsync(AuthToken);
-                TokenIsVisible = true;
-                AvatarUri = syncData.User.AvatarBig;
-                Username = syncData.User.FullName;
-                Items = new ObservableCollection<Item>(syncData.Items);
-                using (var db = new TodoistContext())
-                {
-                    var user = await db.Users.FirstOrDefaultAsync();
-                    if (clearData || user == null)
-                    {
-                        var items = syncData.Items.Select(i => new DbItem
-                        {
-                            Checked = i.Checked,
-                            Content = i.Content
-                        }).ToList();
-                        await db.Database.ExecuteSqlCommandAsync("delete from items");
-                        await db.Database.ExecuteSqlCommandAsync("delete from users");
-                        await db.Items.AddRangeAsync(items);
-                        db.Users.Add(new DbUser
-                        {
-                            FullName = syncData.User.FullName,
-                            AvatarBig = syncData.User.AvatarBig,
-                            Token = syncData.User.Token
-                        });
-                    }
-                    else
-                    {
-                        user.FullName = syncData.User.FullName;
-                        user.AvatarBig = syncData.User.AvatarBig;
-                        user.Token = syncData.User.Token;
-                    }
-                    await db.SaveChangesAsync();
-                }
-            }
-            catch (ApiException apiException)
-            {
-                TokenIsVisible = false;
-                await new MessageDialog("Sync failed with error:" + apiException.ErrorMessage).ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
             }
         }
     }

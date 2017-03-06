@@ -6,16 +6,16 @@ using TodoistDemo.Core.Communication.ApiModels;
 
 namespace TodoistDemo.Core.Services
 {
-    public class AccountManager : IAccountManager
+    public class WebSyncService : IWebSyncService
     {
         private readonly IRestClient _restClient;
 
-        public AccountManager(IRestClient restClient)
+        public WebSyncService(IRestClient restClient)
         {
             _restClient = restClient;
         }
 
-        public async Task<SyncData> LoginAsync(string token)
+        public async Task<SyncData> RetrieveAllItemsAsync(string token)
         {
             var formData = new List<KeyValuePair<string, string>>
             {

@@ -3,8 +3,8 @@ using TodoistDemo.Core.Communication.ApiModels;
 
 namespace TodoistDemo.Core.Services
 {
-    public interface IAccountManager
+    public interface IWebSyncService
     {
-        Task<SyncData> LoginAsync(string token);
+        Task<SyncData> RetrieveAllItemsAsync(string token);
     }
 }

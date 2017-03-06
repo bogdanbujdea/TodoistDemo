@@ -40,7 +40,10 @@ namespace TodoistDemo
             _container.RegisterWinRTServices();
 
             _container.RegisterPerRequest(typeof(IRestClient), "RestClient", typeof(RestClient));
-            _container.RegisterPerRequest(typeof(IAccountManager), "AccountManager", typeof(AccountManager));
+            _container.RegisterPerRequest(typeof(IWebSyncService), "AccountManager", typeof(WebSyncService));
+            _container.RegisterPerRequest(typeof(IItemsRepository), "ItemsRepository", typeof(ItemsRepository));
+            _container.RegisterPerRequest(typeof(IUserRepository), "UserRepository", typeof(UserRepository));
+            _container.RegisterPerRequest(typeof(ITaskManager), "TaskManager", typeof(TaskManager));
 
             _container.PerRequest<ItemsViewModel>();
         }

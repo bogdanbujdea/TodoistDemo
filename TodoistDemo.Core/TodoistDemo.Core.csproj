@@ -108,34 +108,40 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Communication\ApiEndpoints.cs" />
-    <Compile Include="Communication\ApiModels\IItem.cs" />
     <Compile Include="Communication\ApiModels\Item.cs" />
-    <Compile Include="Communication\ApiModels\IUser.cs" />
     <Compile Include="Communication\ApiModels\User.cs" />
     <Compile Include="Communication\ApiModels\Filter.cs" />
     <Compile Include="Communication\ApiModels\Project.cs" />
     <Compile Include="Communication\ApiModels\TzInfo.cs" />
     <Compile Include="Communication\IRestClient.cs" />
     <Compile Include="Communication\RestClient.cs" />
-    <Compile Include="Migrations\20170306163149_DbSetup.cs" />
-    <Compile Include="Migrations\20170306163149_DbSetup.designer.cs">
-      <DependentUpon>20170306163149_DbSetup.cs</DependentUpon>
+    <Compile Include="Migrations\20170306201857_DbSetup.cs" />
+    <Compile Include="Migrations\20170306201857_DbSetup.designer.cs">
+      <DependentUpon>20170306201857_DbSetup.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\TodoistContextModelSnapshot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\AccountManager.cs" />
+    <Compile Include="Communication\WebServices\WebSyncService.cs" />
     <Compile Include="Communication\ApiException.cs" />
-    <Compile Include="Services\IAccountManager.cs" />
+    <Compile Include="Communication\WebServices\IWebSyncService.cs" />
     <Compile Include="Communication\ApiModels\SyncData.cs" />
+    <Compile Include="Services\ITaskManager.cs" />
+    <Compile Include="Services\TaskManager.cs" />
     <Compile Include="Storage\Database\DbItem.cs" />
+    <Compile Include="Storage\Database\DbModelExtensions.cs" />
     <Compile Include="Storage\Database\DbUser.cs" />
+    <Compile Include="Storage\Database\IItemsRepository.cs" />
+    <Compile Include="Storage\Database\ItemsRepository.cs" />
+    <Compile Include="Storage\Database\IUserRepository.cs" />
     <Compile Include="Storage\Database\TodoistContext.cs" />
+    <Compile Include="Storage\Database\UserRepository.cs" />
     <Compile Include="Validation\Reports\Operation\BasicReport.cs" />
     <Compile Include="Validation\Reports\Operation\ValidationReport.cs" />
     <Compile Include="Validation\Reports\Web\BasicWebReport.cs" />
     <Compile Include="Validation\Reports\Web\FailedRequest.cs" />
     <EmbeddedResource Include="Properties\TodoistDemo.Core.rd.xml" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
