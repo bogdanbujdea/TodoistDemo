@@ -8,6 +8,17 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <TextBox x:Name="AuthToken"></TextBox>
+        <Grid x:Name="ContentGrid">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <TextBox x:Name="AuthToken" HorizontalAlignment="Left" MinWidth="300" Header="Authentication token"></TextBox>
+                    <AppBarButton x:Name="Sync" Icon="Save" Foreground="Black" VerticalAlignment="Center" Margin="0 30 0 0"></AppBarButton>
+                </StackPanel>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

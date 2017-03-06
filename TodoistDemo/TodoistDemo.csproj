@@ -126,7 +126,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
-    <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="Views\TasksView.xaml">

@@ -1,16 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using TodoistDemo.Core.Communication;
+using System.Threading.Tasks;
+using Windows.UI.Popups;
+using TodoistDemo.Core.Services;
 
 namespace TodoistDemo.ViewModels
 {
     public class TasksViewModel: ViewModelBase
     {
+        private readonly IAccountManager _accountManager;
         private string _authToken;
 
-        public TasksViewModel()
+        public TasksViewModel(IAccountManager accountManager)
         {
-
+            _accountManager = accountManager;
         }
 
         public string AuthToken
@@ -20,19 +23,25 @@ namespace TodoistDemo.ViewModels
             {
                 if (value == _authToken) return;
                 _authToken = value;
-                SyncUser();                
                 NotifyOfPropertyChange(() => AuthToken);
             }
         }
 
-        private async void SyncUser()
+        public async Task Sync()
         {
-            var formData = new List<KeyValuePair<string, string>>();
-            formData.Add(new KeyValuePair<string, string>("token", AuthToken));
-            formData.Add(new KeyValuePair<string, string>("sync_oken", "*"));
-            formData.Add(new KeyValuePair<string, string>("resource_types", "[\"all\"]"));
-            var basicWebReport = await new RestClient().PostAsync(ApiEndpoints.SyncUrl, formData);
-            Debug.WriteLine(basicWebReport.StringResponse);
+            try
+            {
+                var syncData = await _accountManager.LoginAsync(AuthToken);
+                await new MessageDialog("Hello " + syncData.User.FullName).ShowAsync();
+            }
+            catch (ApiException apiException)
+            {
+                await new MessageDialog("Sync failed with error:" + apiException.ErrorMessage).ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
     }
 }

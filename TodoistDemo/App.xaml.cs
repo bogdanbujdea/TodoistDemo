@@ -4,6 +4,8 @@ using Windows.ApplicationModel.Activation;
 using Windows.UI.Popups;
 using Windows.UI.Xaml.Controls;
 using Caliburn.Micro;
+using TodoistDemo.Core.Communication;
+using TodoistDemo.Core.Services;
 using TodoistDemo.ViewModels;
 using TodoistDemo.Views;
 
@@ -30,6 +32,10 @@ namespace TodoistDemo
             _container = new WinRTContainer();
 
             _container.RegisterWinRTServices();
+
+            _container.RegisterPerRequest(typeof(IRestClient), "RestClient", typeof(RestClient));
+            _container.RegisterPerRequest(typeof(IAccountManager), "AccountManager", typeof(AccountManager));
+
             _container.PerRequest<TasksViewModel>();
         }
 
