@@ -42,7 +42,7 @@ namespace TodoistDemo
             _container.RegisterPerRequest(typeof(IRestClient), "RestClient", typeof(RestClient));
             _container.RegisterPerRequest(typeof(IAccountManager), "AccountManager", typeof(AccountManager));
 
-            _container.PerRequest<TasksViewModel>();
+            _container.PerRequest<ItemsViewModel>();
         }
 
         protected override void PrepareViewFirst(Frame rootFrame)
@@ -52,7 +52,7 @@ namespace TodoistDemo
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            DisplayRootView<TasksView>();
+            DisplayRootView<ItemsView>();
         }
 
         protected override object GetInstance(Type service, string key)

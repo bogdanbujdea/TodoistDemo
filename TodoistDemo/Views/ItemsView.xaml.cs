@@ -1,8 +1,8 @@
 ﻿namespace TodoistDemo.Views
 {
-    public sealed partial class TasksView
+    public sealed partial class ItemsView
     {
-        public TasksView()
+        public ItemsView()
         {
             InitializeComponent();
         }

@@ -95,11 +95,12 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Converters\ItemsToVisibilityConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ViewModels\TasksViewModel.cs" />
+    <Compile Include="ViewModels\ItemsViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
-    <Compile Include="Views\TasksView.xaml.cs">
-      <DependentUpon>TasksView.xaml</DependentUpon>
+    <Compile Include="Views\ItemsView.xaml.cs">
+      <DependentUpon>ItemsView.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -128,7 +129,7 @@
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="Views\TasksView.xaml">
+    <Page Include="Views\ItemsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
