@@ -4,8 +4,10 @@ using Windows.ApplicationModel.Activation;
 using Windows.UI.Popups;
 using Windows.UI.Xaml.Controls;
 using Caliburn.Micro;
+using Microsoft.EntityFrameworkCore;
 using TodoistDemo.Core.Communication;
 using TodoistDemo.Core.Services;
+using TodoistDemo.Core.Storage.Database;
 using TodoistDemo.ViewModels;
 using TodoistDemo.Views;
 
@@ -19,6 +21,10 @@ namespace TodoistDemo
         {
             InitializeComponent();
             UnhandledException += AppUnhandledException;
+            using (var db = new TodoistContext())
+            {
+                db.Database.Migrate();
+            }
         }
 
         private async void AppUnhandledException(object sender, Windows.UI.Xaml.UnhandledExceptionEventArgs e)

@@ -1,7 +1,9 @@
 ﻿{
   "dependencies": {
     "Caliburn.Micro": "3.0.3",
-    "Microsoft.NETCore.UniversalWindowsPlatform": "5.1.0"
+    "Microsoft.EntityFrameworkCore.Sqlite": "1.1.0",
+    "Microsoft.EntityFrameworkCore.Tools": "1.1.0-preview4-final",
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.2"
   },
   "frameworks": {
     "uap10.0": {}

@@ -2,7 +2,7 @@
 
 namespace TodoistDemo.Core.Communication.ApiModels
 {
-    public class User
+    public class User : IUser
     {
         public int Id { get; set; }
 

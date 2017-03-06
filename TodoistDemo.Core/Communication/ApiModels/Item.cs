@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace TodoistDemo.Core.Communication.ApiModels
 {
-    public class Item
+    public class Item : IItem
     {
         public int Id { get; set; }
 
