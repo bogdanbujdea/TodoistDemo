@@ -1,8 +1,14 @@
-﻿<Application
+﻿<micro:CaliburnApplication
     x:Class="TodoistDemo.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:micro="using:Caliburn.Micro"
     xmlns:local="using:TodoistDemo"
     RequestedTheme="Light">
-
-</Application>
+    <micro:CaliburnApplication.Resources>
+        <ResourceDictionary>
+            <micro:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <SolidColorBrush x:Key="BizidayBlue" Color="#0F3B5C" />
+        </ResourceDictionary>
+    </micro:CaliburnApplication.Resources>
+</micro:CaliburnApplication>
