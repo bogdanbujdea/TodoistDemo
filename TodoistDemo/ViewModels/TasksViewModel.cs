@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
+using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
 
 namespace TodoistDemo.ViewModels
@@ -10,6 +12,7 @@ namespace TodoistDemo.ViewModels
     {
         private readonly IAccountManager _accountManager;
         private string _authToken;
+        private ObservableCollection<Item> _tasks;
 
         public TasksViewModel(IAccountManager accountManager)
         {
@@ -27,12 +30,24 @@ namespace TodoistDemo.ViewModels
             }
         }
 
+        public ObservableCollection<Item> Tasks
+        {
+            get { return _tasks; }
+            set
+            {
+                if (Equals(value, _tasks)) return;
+                _tasks = value;
+                NotifyOfPropertyChange(() => Tasks);
+            }
+        }
+
         public async Task Sync()
         {
             try
             {
                 var syncData = await _accountManager.LoginAsync(AuthToken);
-                await new MessageDialog("Hello " + syncData.User.FullName).ShowAsync();
+                //await new MessageDialog("Hello " + syncData.User.FullName).ShowAsync();
+                Tasks = new ObservableCollection<Item>(syncData.Items);
             }
             catch (ApiException apiException)
             {

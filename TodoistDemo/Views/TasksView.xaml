@@ -5,6 +5,7 @@
     xmlns:local="using:TodoistDemo.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:apiModels="using:TodoistDemo.Core.Communication.ApiModels"
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -18,6 +19,22 @@
                     <TextBox x:Name="AuthToken" HorizontalAlignment="Left" MinWidth="300" Header="Authentication token"></TextBox>
                     <AppBarButton x:Name="Sync" Icon="Save" Foreground="Black" VerticalAlignment="Center" Margin="0 30 0 0"></AppBarButton>
                 </StackPanel>
+            </Grid>
+            <Grid Row="1">
+                <ListView x:Name="Tasks">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid d:DataContext="{d:DesignInstance apiModels:Item}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="50"></ColumnDefinition>
+                                    <ColumnDefinition Width="*"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton IsChecked="{Binding Checked, Mode=TwoWay}"></RadioButton>
+                                <TextBlock Grid.Column="1" Text="{Binding Content}"></TextBlock>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
             </Grid>
         </Grid>
     </Grid>
