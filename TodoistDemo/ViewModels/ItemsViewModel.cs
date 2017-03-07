@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
 using ReactiveUI;
@@ -44,7 +45,10 @@ namespace TodoistDemo.ViewModels
                 await Sync();
             }
             Items.ChangeTrackingEnabled = true;
-            Items.ItemChanged.Subscribe(async args =>
+            Items.ItemChanged
+                .Throttle(TimeSpan.FromSeconds(3))
+                .SubscribeOnDispatcher()
+                .Subscribe(async args =>
             {
                 await ToggleTask(args.Sender);
             });
@@ -82,11 +86,12 @@ namespace TodoistDemo.ViewModels
                 Items.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
             var items = await _taskManager.RetrieveTasksFromWebAsync();
-            foreach (var item in GetItemsToRemove(items))
-            {
-                var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
-                Items.Remove(existingItem);
-            }
+            RemoveItems(items);
+            AddItems(items);
+        }
+
+        private void AddItems(List<BindableItem> items)
+        {
             var visibleItems = GetItemsToInsert(items).Distinct();
             foreach (var item in visibleItems)
             {
@@ -97,6 +102,15 @@ namespace TodoistDemo.ViewModels
                     Items[index] = item;
                 }
                 else Insert(item, Items);
+            }
+        }
+
+        private void RemoveItems(List<BindableItem> items)
+        {
+            foreach (var item in GetItemsToRemove(items))
+            {
+                var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
+                Items.Remove(existingItem);
             }
         }
 
