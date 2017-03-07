@@ -34,10 +34,11 @@ namespace TodoistDemo.ViewModels
         protected override async void OnActivate()
         {
             base.OnActivate();
-            await UpdateItems();
             AuthToken = _appSettings.GetData<string>(SettingsKey.UserToken);
+
             if (string.IsNullOrWhiteSpace(AuthToken) == false)
             {
+                await UpdateItems();
                 await Sync();
             }
         }
@@ -52,8 +53,8 @@ namespace TodoistDemo.ViewModels
                     return;
                 }
                 _appSettings.SetData(SettingsKey.UserToken, AuthToken);
-                await SetUserInfo();
                 await UpdateItems();
+                await SetUserInfo();
                 TokenIsVisible = true;
             }
             catch (ApiException apiException)
@@ -68,53 +69,28 @@ namespace TodoistDemo.ViewModels
 
         private async Task UpdateItems()
         {
-            var items = await _taskManager.RetrieveTasksFromWebAsync();
-            var visibleItems = items
-                .Where(i => i.Checked == false && string.IsNullOrWhiteSpace(i.Content) == false)
-                .ToList();
             if (Items.Count == 0)
             {
-                Items = new ObservableCollection<Item>(visibleItems.OrderBy(i => i.Content.ToLower()));
-                return;
+                var storedTasks = (await _taskManager.RetrieveTasksAsync());
+                Items = new ObservableCollection<Item>(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
-            foreach (var item in items.Where(i => i.Checked))
+            var items = await _taskManager.RetrieveTasksFromWebAsync();
+            foreach (var item in items.Where(i => i.Checked || string.IsNullOrWhiteSpace(i.Content)))
             {
                 var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
-                if (existingItem != null)
-                    Items.Remove(existingItem);
+                Items.Remove(existingItem);
             }
+            var visibleItems = items.Where(TaskIsVisible);
             foreach (var item in visibleItems)
             {
                 var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
                 if (existingItem != null)
                 {
-                    if (ItemIsUpdated(existingItem, item))
-                    {
-                        Items.Remove(existingItem);
-                        Insert(item);
-                    }
+                    var index = Items.IndexOf(existingItem);
+                    Items[index] = item;
                 }
-                else
-                    Insert(item);
+                else Insert(item, Items);
             }
-        }
-
-        private bool ItemIsUpdated(Item existingItem, Item updatedItem)
-        {
-            return existingItem.Checked != updatedItem.Checked || existingItem.Content != updatedItem.Content;
-        }
-
-        private void Insert(Item item)
-        {
-            for (int index = 0; index < Items.Count; index++)
-            {
-                if (string.CompareOrdinal(Items[index].Content.ToLower(), item.Content.ToLower()) > 0)
-                {
-                    Items.Insert(index, item);
-                    return;
-                }
-            }
-            Items.Add(item);
         }
 
         private async Task SetUserInfo()
@@ -177,6 +153,24 @@ namespace TodoistDemo.ViewModels
                 _username = value;
                 NotifyOfPropertyChange(() => Username);
             }
+        }
+
+        private bool TaskIsVisible(Item i)
+        {
+            return !i.Checked && !string.IsNullOrWhiteSpace(i.Content);
+        }
+
+        private void Insert(Item item, ObservableCollection<Item> items)
+        {
+            for (int index = 0; index < items.Count; index++)
+            {
+                if (string.CompareOrdinal(items[index].Content.ToLower(), item.Content.ToLower()) > 0)
+                {
+                    items.Insert(index, item);
+                    return;
+                }
+            }
+            items.Add(item);
         }
     }
 }

@@ -57,7 +57,7 @@ namespace TodoistDemo.Core.Services
                 }
                 await db.SaveChangesAsync();
             }
-            return await _itemsRepository.RetrieveItems();
+            return syncData.Items;
         }
     }
 }
