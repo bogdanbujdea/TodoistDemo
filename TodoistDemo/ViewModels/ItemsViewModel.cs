@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
+using Caliburn.Micro;
 using TodoistDemo.Core.Communication;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
@@ -22,6 +24,7 @@ namespace TodoistDemo.ViewModels
         private bool _tokenIsVisible;
         private string _avatarUri;
         private string _username;
+        private bool _completedItemsAreVisible;
 
         public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository, IAppSettings appSettings)
         {
@@ -75,12 +78,12 @@ namespace TodoistDemo.ViewModels
                 Items = new ObservableCollection<Item>(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
             var items = await _taskManager.RetrieveTasksFromWebAsync();
-            foreach (var item in items.Where(i => i.Checked || string.IsNullOrWhiteSpace(i.Content)))
+            foreach (var item in GetItemsToRemove(items))
             {
                 var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
                 Items.Remove(existingItem);
             }
-            var visibleItems = items.Where(TaskIsVisible);
+            var visibleItems = GetItemsToInsert(items).Distinct();
             foreach (var item in visibleItems)
             {
                 var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
@@ -91,6 +94,16 @@ namespace TodoistDemo.ViewModels
                 }
                 else Insert(item, Items);
             }
+        }
+
+        private IEnumerable<Item> GetItemsToInsert(List<Item> items)
+        {
+            return items.Where(TaskIsVisible);
+        }
+
+        private IEnumerable<Item> GetItemsToRemove(List<Item> items)
+        {
+            return items.Where(i => (i.Checked && !CompletedItemsAreVisible) || string.IsNullOrWhiteSpace(i.Content));
         }
 
         private async Task SetUserInfo()
@@ -155,8 +168,31 @@ namespace TodoistDemo.ViewModels
             }
         }
 
+        public async Task ToggleCompletedTasks()
+        {
+            var allTasks = await _taskManager.RetrieveTasksAsync();
+            Items = new BindableCollection<Item>(allTasks.Where(t => t.Checked == CompletedItemsAreVisible));
+        }
+
+        public bool CompletedItemsAreVisible
+        {
+            get { return _completedItemsAreVisible; }
+            set
+            {
+                if (value == _completedItemsAreVisible) return;
+                _completedItemsAreVisible = value;
+                if (value)
+                {
+
+                }
+                NotifyOfPropertyChange(() => CompletedItemsAreVisible);
+            }
+        }
+
         private bool TaskIsVisible(Item i)
         {
+            if (CompletedItemsAreVisible)
+                return string.IsNullOrWhiteSpace(i.Content);
             return !i.Checked && !string.IsNullOrWhiteSpace(i.Content);
         }
 
