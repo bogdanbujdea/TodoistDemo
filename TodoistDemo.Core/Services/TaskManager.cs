@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Communication.WebServices;
 using TodoistDemo.Core.Storage.Database;
@@ -20,24 +22,30 @@ namespace TodoistDemo.Core.Services
             _userRepository = userRepository;
         }
 
-        public async Task<List<Item>> RetrieveTasksAsync()
+        public async Task<List<BindableItem>> RetrieveTasksAsync()
         {
             return await _itemsRepository.RetrieveItems();
         }
 
-        public async Task AddTasksAsync(List<Item> items)
+        public async Task AddTasksAsync(List<BindableItem> items)
         {
             await _itemsRepository.AddItems(items);
         }
 
-        public async Task<List<Item>> RetrieveTasksFromWebAsync()
+        public async Task<List<BindableItem>> RetrieveTasksFromWebAsync()
         {
             var syncData = await _webSyncService.RetrieveAllItemsAsync();
 
+            await UpdateDatabase(syncData);
+            return syncData.Items.Select(item => item.ToItem()).ToList();
+        }
+
+        private async Task UpdateDatabase(SyncData syncData)
+        {
             using (var db = new TodoistContext())
             {
                 await _userRepository.SaveUser(syncData.User);
-                var items = syncData.Items.Select(i => i.ToDbItem()).ToList();
+                var items = syncData.Items;
 
                 foreach (var dbItem in items)
                 {
@@ -57,7 +65,44 @@ namespace TodoistDemo.Core.Services
                 }
                 await db.SaveChangesAsync();
             }
-            return syncData.Items;
         }
+
+        public async Task ToggleItem(BindableItem bindableItem)
+        {
+            var command = new ApiCommand();
+            if (bindableItem.Checked)
+            {
+                command.Type = "item_complete";
+            }
+            else command.Type = "item_uncomplete";
+            command.Args = new CommandArguments {Ids = new List<int> {bindableItem.Id} };
+            var syncData = await _webSyncService.RetrieveAllItemsAsync(command);
+            await UpdateDatabase(syncData);
+        }
+    }
+
+    public class ApiCommand
+    {
+        public ApiCommand()
+        {
+            Id = Guid.NewGuid().ToString();
+        }
+
+        [JsonProperty(PropertyName = "type")]
+        public string Type { get; set; }
+
+        [JsonProperty(PropertyName = "args")]
+        public CommandArguments Args{ get; set; }
+
+        [JsonProperty(PropertyName = "uuid")]
+        public string Id { get; set; }
+
+
+    }
+
+    public class CommandArguments
+    {
+        [JsonProperty(PropertyName = "ids")]
+        public List<int> Ids { get; set; }
     }
 }

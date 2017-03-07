@@ -26,23 +26,23 @@ namespace TodoistDemo.Core.Storage.Database
             };
         }
 
-        public static DbItem ToDbItem(this Item item)
+        public static Item ToDbItem(this BindableItem bindableItem)
         {
-            return new DbItem
+            return new Item
+            {
+                Id = bindableItem.Id,
+                Checked = bindableItem.Checked,
+                Content = bindableItem.Content
+            };
+        }
+
+        public static BindableItem ToItem(this Item item)
+        {
+            return new BindableItem
             {
                 Id = item.Id,
                 Checked = item.Checked,
                 Content = item.Content
-            };
-        }
-
-        public static Item ToItem(this DbItem dbItem)
-        {
-            return new Item
-            {
-                Id = dbItem.Id,
-                Checked = dbItem.Checked,
-                Content = dbItem.Content
             };
         }
     }

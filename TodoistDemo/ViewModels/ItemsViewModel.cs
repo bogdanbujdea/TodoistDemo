@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
-using Caliburn.Micro;
+using ReactiveUI;
 using TodoistDemo.Core.Communication;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
@@ -20,7 +19,7 @@ namespace TodoistDemo.ViewModels
         private readonly IUserRepository _userRepository;
         private readonly IAppSettings _appSettings;
         private string _authToken;
-        private ObservableCollection<Item> _items;
+        private ReactiveList<BindableItem> _items;
         private bool _tokenIsVisible;
         private string _avatarUri;
         private string _username;
@@ -31,7 +30,7 @@ namespace TodoistDemo.ViewModels
             _taskManager = taskManager;
             _userRepository = userRepository;
             _appSettings = appSettings;
-            Items = new ObservableCollection<Item>();
+            Items = new ReactiveList<BindableItem>();
         }
 
         protected override async void OnActivate()
@@ -44,6 +43,11 @@ namespace TodoistDemo.ViewModels
                 await UpdateItems();
                 await Sync();
             }
+            Items.ChangeTrackingEnabled = true;
+            Items.ItemChanged.Subscribe(async args =>
+            {
+                await ToggleTask(args.Sender);
+            });
         }
 
         public async Task Sync()
@@ -75,7 +79,7 @@ namespace TodoistDemo.ViewModels
             if (Items.Count == 0)
             {
                 var storedTasks = (await _taskManager.RetrieveTasksAsync());
-                Items = new ObservableCollection<Item>(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
+                Items.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
             var items = await _taskManager.RetrieveTasksFromWebAsync();
             foreach (var item in GetItemsToRemove(items))
@@ -96,14 +100,14 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        private IEnumerable<Item> GetItemsToInsert(List<Item> items)
+        private IEnumerable<BindableItem> GetItemsToInsert(List<BindableItem> items)
         {
             return items.Where(TaskIsVisible);
         }
 
-        private IEnumerable<Item> GetItemsToRemove(List<Item> items)
+        private IEnumerable<BindableItem> GetItemsToRemove(List<BindableItem> items)
         {
-            return items.Where(i => (i.Checked && !CompletedItemsAreVisible) || string.IsNullOrWhiteSpace(i.Content));
+            return items.Where(i => (i.Checked != CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(i.Content));
         }
 
         private async Task SetUserInfo()
@@ -135,7 +139,7 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        public ObservableCollection<Item> Items
+        public ReactiveList<BindableItem> Items
         {
             get { return _items; }
             set
@@ -171,7 +175,14 @@ namespace TodoistDemo.ViewModels
         public async Task ToggleCompletedTasks()
         {
             var allTasks = await _taskManager.RetrieveTasksAsync();
-            Items = new BindableCollection<Item>(allTasks.Where(t => t.Checked == CompletedItemsAreVisible));
+            Items.Clear();
+            Items.AddRange(allTasks.Where(t => t.Checked == CompletedItemsAreVisible));
+        }
+
+        public async Task ToggleTask(BindableItem bindableItem)
+        {
+            await _taskManager.ToggleItem(bindableItem);
+            Items.Remove(bindableItem);
         }
 
         public bool CompletedItemsAreVisible
@@ -181,32 +192,26 @@ namespace TodoistDemo.ViewModels
             {
                 if (value == _completedItemsAreVisible) return;
                 _completedItemsAreVisible = value;
-                if (value)
-                {
-
-                }
                 NotifyOfPropertyChange(() => CompletedItemsAreVisible);
             }
         }
 
-        private bool TaskIsVisible(Item i)
+        private bool TaskIsVisible(BindableItem i)
         {
-            if (CompletedItemsAreVisible)
-                return string.IsNullOrWhiteSpace(i.Content);
-            return !i.Checked && !string.IsNullOrWhiteSpace(i.Content);
+            return (i.Checked == CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(i.Content);
         }
 
-        private void Insert(Item item, ObservableCollection<Item> items)
+        private void Insert(BindableItem bindableItem, ReactiveList<BindableItem> items)
         {
             for (int index = 0; index < items.Count; index++)
             {
-                if (string.CompareOrdinal(items[index].Content.ToLower(), item.Content.ToLower()) > 0)
+                if (string.CompareOrdinal(items[index].Content.ToLower(), bindableItem.Content.ToLower()) > 0)
                 {
-                    items.Insert(index, item);
+                    items.Insert(index, bindableItem);
                     return;
                 }
             }
-            items.Add(item);
+            items.Add(bindableItem);
         }
     }
 }

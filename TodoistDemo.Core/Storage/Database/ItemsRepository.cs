@@ -8,7 +8,7 @@ namespace TodoistDemo.Core.Storage.Database
 {
     public class ItemsRepository : IItemsRepository
     {
-        public async Task<List<Item>> RetrieveItems()
+        public async Task<List<BindableItem>> RetrieveItems()
         {
             using (var db = new TodoistContext())
             {
@@ -18,7 +18,7 @@ namespace TodoistDemo.Core.Storage.Database
             }
         }
 
-        public async Task AddItems(List<Item> items)
+        public async Task AddItems(List<BindableItem> items)
         {
             using (var db = new TodoistContext())
             {

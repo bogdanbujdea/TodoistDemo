@@ -6,7 +6,7 @@ namespace TodoistDemo.Core.Storage.Database
 {
     public interface IItemsRepository
     {
-        Task<List<Item>> RetrieveItems();
-        Task AddItems(List<Item> items);
+        Task<List<BindableItem>> RetrieveItems();
+        Task AddItems(List<BindableItem> items);
     }
 }

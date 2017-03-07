@@ -108,7 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Communication\ApiEndpoints.cs" />
-    <Compile Include="Communication\ApiModels\Item.cs" />
+    <Compile Include="Communication\ApiModels\BindableItem.cs" />
     <Compile Include="Communication\ApiModels\User.cs" />
     <Compile Include="Communication\ApiModels\Filter.cs" />
     <Compile Include="Communication\ApiModels\Project.cs" />
@@ -127,7 +127,7 @@
     <Compile Include="Communication\ApiModels\SyncData.cs" />
     <Compile Include="Services\ITaskManager.cs" />
     <Compile Include="Services\TaskManager.cs" />
-    <Compile Include="Storage\Database\DbItem.cs" />
+    <Compile Include="Storage\Database\Item.cs" />
     <Compile Include="Storage\Database\DbModelExtensions.cs" />
     <Compile Include="Storage\Database\DbUser.cs" />
     <Compile Include="Storage\Database\IItemsRepository.cs" />
@@ -146,6 +146,11 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Storage\LocalSettings\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="ReactiveUI">
+      <HintPath>..\..\..\..\..\.nuget\packages\reactiveui-core\7.2.0\lib\UAP10\ReactiveUI.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

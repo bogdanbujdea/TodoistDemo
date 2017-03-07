@@ -6,8 +6,9 @@ namespace TodoistDemo.Core.Services
 {
     public interface ITaskManager
     {
-        Task<List<Item>> RetrieveTasksAsync();
-        Task AddTasksAsync(List<Item> items);
-        Task<List<Item>> RetrieveTasksFromWebAsync();
+        Task<List<BindableItem>> RetrieveTasksAsync();
+        Task AddTasksAsync(List<BindableItem> items);
+        Task<List<BindableItem>> RetrieveTasksFromWebAsync();
+        Task ToggleItem(BindableItem bindableItem);
     }
 }

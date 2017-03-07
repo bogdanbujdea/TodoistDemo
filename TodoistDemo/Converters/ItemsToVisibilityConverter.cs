@@ -10,7 +10,7 @@ namespace TodoistDemo.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            var collection = value as ObservableCollection<Item>;
+            var collection = value as ObservableCollection<BindableItem>;
             return collection?.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 

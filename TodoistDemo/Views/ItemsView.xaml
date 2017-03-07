@@ -48,12 +48,12 @@
                 <ListView x:Name="Items" Grid.Row="1" SelectionMode="None">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid d:DataContext="{d:DesignInstance apiModels:Item}">
+                            <Grid d:DataContext="{d:DesignInstance apiModels:BindableItem}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="50"></ColumnDefinition>
                                     <ColumnDefinition Width="*"></ColumnDefinition>
                                 </Grid.ColumnDefinitions>
-                                <RadioButton IsChecked="{Binding Checked, Mode=TwoWay}"></RadioButton>
+                                <CheckBox IsChecked="{Binding Checked, Mode=TwoWay}"></CheckBox>
                                 <TextBlock Grid.Column="1" Text="{Binding Content}"></TextBlock>
                             </Grid>
                         </DataTemplate>

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TodoistDemo.Core.Communication.ApiModels;
+using TodoistDemo.Core.Services;
 using TodoistDemo.Core.Storage;
 
 namespace TodoistDemo.Core.Communication.WebServices
@@ -17,7 +18,7 @@ namespace TodoistDemo.Core.Communication.WebServices
             _appSettings = appSettings;
         }
 
-        public async Task<SyncData> RetrieveAllItemsAsync()
+        public async Task<SyncData> RetrieveAllItemsAsync(ApiCommand command = null)
         {
             if (string.IsNullOrWhiteSpace(_appSettings.GetData<string>(SettingsKey.SyncToken)))
             {
@@ -29,6 +30,11 @@ namespace TodoistDemo.Core.Communication.WebServices
                 new KeyValuePair<string, string>("sync_token", _appSettings.GetData<string>(SettingsKey.SyncToken)),
                 new KeyValuePair<string, string>("resource_types", "[\"items\", \"user\"]")
             };
+            if (command != null)
+            {
+                var json = JsonConvert.SerializeObject(new List<ApiCommand> { command });
+                formData.Add(new KeyValuePair<string, string>("commands", json));
+            }
             var basicWebReport = await _restClient.PostAsync(ApiEndpoints.SyncUrl, formData);
             if (basicWebReport.IsSuccessful)
             {
