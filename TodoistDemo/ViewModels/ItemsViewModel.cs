@@ -200,6 +200,7 @@ namespace TodoistDemo.ViewModels
 
         private async Task HandleInvalidToken(Exception exception)
         {
+            _itemsCountChangedDisposable.Dispose();
             _itemsChangedDisposable?.Dispose();
             var apiException = exception as ApiException;
             var errorMessage = apiException != null ? apiException.ErrorMessage : exception.Message;
