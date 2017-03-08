@@ -103,17 +103,13 @@
                 </ListView>
             </Grid>
         </Grid>
-        <Grid
-            x:Name="LoadingGrid"
-            Background="White"
-            Opacity="0.7">
-        </Grid>
         <ProgressRing
             x:Name="ProgressIndicator"
-            Width="100"
-            Height="100"
+            Width="50"
+            Height="50"
             Foreground="Tomato"
-            IsActive="True">
+            IsActive="True"
+            Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
         </ProgressRing>
     </Grid>
 </Page>

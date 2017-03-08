@@ -28,6 +28,7 @@ namespace TodoistDemo.ViewModels
         private string _avatarUri;
         private string _username;
         private bool _completedItemsAreVisible;
+        private ReactiveList<BindableItem> _changedItems;
         private IDisposable ItemsChangedDisposable;
 
         public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository, IAppSettings appSettings)
@@ -43,52 +44,57 @@ namespace TodoistDemo.ViewModels
             base.OnActivate();
             AuthToken = _appSettings.GetData<string>(SettingsKey.UserToken);
 
-            if (string.IsNullOrWhiteSpace(AuthToken) == false)
-            {
-                IsBusy = true;
-                try
-                {
-                    await UpdateItems();
-                    await Sync();
-                }
-                finally
-                {
-                    IsBusy = false;
-                }
-            }
-        }
-
-        private void BindToItemsChanged()
-        {
-            Items.ChangeTrackingEnabled = true;
-            ItemsChangedDisposable = Items.ItemChanged
-                .Buffer(TimeSpan.FromSeconds(3), 3)
-                .DoWhile(() => string.IsNullOrWhiteSpace(AuthToken) == false)
-                .ObserveOn(SynchronizationContext.Current)
-                .Distinct()
-                .Subscribe(async args =>
-                {
-                    if (string.IsNullOrWhiteSpace(AuthToken))
-                    {
-                        ItemsChangedDisposable.Dispose();
-                        return;
-                    }
-                    await ToggleTasks(args.Select(s => s.Sender).ToList());
-                });
-        }
-
-        private async Task ToggleTasks(List<BindableItem> items)
-        {
+            if (string.IsNullOrWhiteSpace(AuthToken)) return;
             IsBusy = true;
             try
             {
-                if (items?.Count == 0)
+                await UpdateItems();
+                await Sync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void ListenToItemsChanged()
+        {
+            _changedItems = new ReactiveList<BindableItem> { ChangeTrackingEnabled = true };
+            Items.ChangeTrackingEnabled = true;
+            _changedItems.CountChanged
+                .Buffer(TimeSpan.FromSeconds(10), 5)
+                .ObserveOn(SynchronizationContext.Current)
+                .Subscribe(async list =>
                 {
-                    await UpdateItems();
-                    return;
-                }
-                var syncedItems = await _taskManager.ToggleItems(items);
+                    if (list.Count == 0)
+                    {
+                        await UpdateItems();
+                        return;
+                    }
+                    await ToggleTasks();
+                });
+            ItemsChangedDisposable = Items.ItemChanged
+                .ObserveOn(SynchronizationContext.Current)
+                .Subscribe(args =>
+               {
+                   Items.Remove(args.Sender);
+                   _changedItems.Add(args.Sender);
+               });
+        }
+
+        private async Task ToggleTasks()
+        {
+            var changedItems = _changedItems.ToList();
+            _changedItems.Clear();
+            IsBusy = true;
+            try
+            {
+                var syncedItems = await _taskManager.ToggleItems(changedItems);
                 await UpdateItems(syncedItems);
+            }
+            catch (Exception exception)
+            {
+                await HandleInvalidToken(exception);
             }
             finally
             {
@@ -101,9 +107,16 @@ namespace TodoistDemo.ViewModels
             IsBusy = true;
             try
             {
+                if (string.IsNullOrWhiteSpace(AuthToken))
+                    return;
+                if (_changedItems?.Count > 0)
+                {
+                    await ToggleTasks();
+                    return;
+                }
                 _appSettings.SetData(SettingsKey.UserToken, AuthToken);
                 if (ItemsChangedDisposable == null || (ItemsChangedDisposable as CompositeDisposable)?.Count == 0)
-                    BindToItemsChanged();
+                    ListenToItemsChanged();
                 await UpdateItems();
                 await SetUserInfo();
                 UserIsLoggedIn = true;
@@ -122,12 +135,17 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        private async Task HandleInvalidToken(ApiException apiException)
+        private async Task HandleInvalidToken(Exception exception)
         {
             AuthToken = string.Empty;
             ItemsChangedDisposable?.Dispose();
             Items.Clear();
-            await new MessageDialog("Sync failed with error:" + apiException.ErrorMessage).ShowAsync();
+            string errorMessage;
+            if (exception is ApiException)
+                errorMessage = ((ApiException) exception).ErrorMessage;
+            else
+                errorMessage = exception.Message;
+            await new MessageDialog("Sync failed with error:" + errorMessage).ShowAsync();
         }
 
         public string AvatarUri
