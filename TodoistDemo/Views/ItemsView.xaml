@@ -76,7 +76,7 @@
                     </RowDefinition>
                 </Grid.RowDefinitions>
                 <ToggleSwitch
-                    micro:Message.Attach="[Event Toggled]=[Action ToggleCompletedTasks]"
+                    micro:Message.Attach="[Event Toggled]=[Action ToggleCompletedTasks()]"
                     Header="Show completed items"
                     IsOn="{Binding CompletedItemsAreVisible, Mode=TwoWay}">
                 </ToggleSwitch>

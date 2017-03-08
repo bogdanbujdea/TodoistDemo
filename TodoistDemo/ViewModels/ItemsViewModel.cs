@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reactive.Disposables;
@@ -24,7 +23,6 @@ namespace TodoistDemo.ViewModels
         private readonly IAppSettings _appSettings;
         private string _authToken;
         private ReactiveList<BindableItem> _items;
-        private bool _userIsLoggedIn;
         private string _avatarUri;
         private string _username;
         private bool _completedItemsAreVisible;
@@ -37,6 +35,7 @@ namespace TodoistDemo.ViewModels
             _userRepository = userRepository;
             _appSettings = appSettings;
             Items = new ReactiveList<BindableItem>();
+            _taskManager.Items = Items;
         }
 
         protected override async void OnActivate()
@@ -71,7 +70,7 @@ namespace TodoistDemo.ViewModels
                         await UpdateItems();
                         return;
                     }
-                    await ToggleTasks();
+                    await SynchronizeModifiedTasks();
                 });
             ItemsChangedDisposable = Items.ItemChanged
                 .ObserveOn(SynchronizationContext.Current)
@@ -82,7 +81,7 @@ namespace TodoistDemo.ViewModels
                });
         }
 
-        private async Task ToggleTasks()
+        private async Task SynchronizeModifiedTasks()
         {
             var changedItems = _changedItems.ToList();
             _changedItems.Clear();
@@ -111,7 +110,7 @@ namespace TodoistDemo.ViewModels
                     return;
                 if (_changedItems?.Count > 0)
                 {
-                    await ToggleTasks();
+                    await SynchronizeModifiedTasks();
                     return;
                 }
                 _appSettings.SetData(SettingsKey.UserToken, AuthToken);
@@ -119,15 +118,10 @@ namespace TodoistDemo.ViewModels
                     ListenToItemsChanged();
                 await UpdateItems();
                 await SetUserInfo();
-                UserIsLoggedIn = true;
-            }
-            catch (ApiException apiException)
-            {
-                await HandleInvalidToken(apiException);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                await HandleInvalidToken(ex);
             }
             finally
             {
@@ -135,17 +129,23 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        private async Task HandleInvalidToken(Exception exception)
+        public ReactiveList<BindableItem> Items
         {
-            AuthToken = string.Empty;
-            ItemsChangedDisposable?.Dispose();
+            get { return _items; }
+            set
+            {
+                if (Equals(value, _items)) return;
+                _items = value;
+                NotifyOfPropertyChange(() => Items);
+            }
+        }
+        
+        public async Task ToggleCompletedTasks()
+        {
+            Expression<Func<Item, bool>> exp = item => item.Checked == CompletedItemsAreVisible;
+            var allTasks = await _taskManager.RetrieveTasksFromDbAsync(exp);
             Items.Clear();
-            string errorMessage;
-            if (exception is ApiException)
-                errorMessage = ((ApiException) exception).ErrorMessage;
-            else
-                errorMessage = exception.Message;
-            await new MessageDialog("Sync failed with error:" + errorMessage).ShowAsync();
+            Items.AddRange(allTasks);
         }
 
         public string AvatarUri
@@ -170,28 +170,6 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        public ReactiveList<BindableItem> Items
-        {
-            get { return _items; }
-            set
-            {
-                if (Equals(value, _items)) return;
-                _items = value;
-                NotifyOfPropertyChange(() => Items);
-            }
-        }
-
-        public bool UserIsLoggedIn
-        {
-            get { return _userIsLoggedIn; }
-            set
-            {
-                if (value == _userIsLoggedIn) return;
-                _userIsLoggedIn = value;
-                NotifyOfPropertyChange(() => UserIsLoggedIn);
-            }
-        }
-
         public string Username
         {
             get { return _username; }
@@ -203,66 +181,16 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        public async Task ToggleCompletedTasks()
-        {
-            Expression<Func<Item, bool>> exp = item => item.Checked == CompletedItemsAreVisible;
-            var allTasks = await _taskManager.RetrieveTasksFromDbAsync(exp);
-            Items.Clear();
-            Items.AddRange(allTasks);
-        }
-
         private async Task UpdateItems(List<BindableItem> syncedItems = null)
         {
             try
             {
-                if (Items.Count == 0)
-                {
-                    Expression<Func<Item, bool>> exp = item => TaskIsVisible(item.ToBindableItem());
-                    var storedTasks = (await _taskManager.RetrieveTasksFromDbAsync(exp));
-                    Items.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
-                }
-                var items = syncedItems ?? await _taskManager.RetrieveTasksFromWebAsync();
-                RemoveItems(items);
-                AddItems(items);
+                await _taskManager.UpdateItems(Items, syncedItems);
             }
-            catch (ApiException apiException)
+            catch (Exception exception)
             {
-                await HandleInvalidToken(apiException);
+                await HandleInvalidToken(exception);
             }
-        }
-
-        private void AddItems(List<BindableItem> items)
-        {
-            var visibleItems = GetItemsToInsert(items).Distinct();
-            foreach (var item in visibleItems)
-            {
-                var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
-                if (existingItem != null)
-                {
-                    var index = Items.IndexOf(existingItem);
-                    Items[index] = item;
-                }
-                else Insert(item, Items);
-            }
-        }
-
-        private void RemoveItems(List<BindableItem> items)
-        {
-            foreach (var item in GetItemsToRemove(items))
-            {
-                var existingItem = Items.FirstOrDefault(i => i.Id == item.Id);
-                Items.Remove(existingItem);
-            }
-        }
-
-        private IEnumerable<BindableItem> GetItemsToInsert(List<BindableItem> items)
-        {
-            return items.Where(TaskIsVisible);
-        }
-
-        private IEnumerable<BindableItem> GetItemsToRemove(List<BindableItem> items)
-        {
-            return items.Where(i => (i.Checked != CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(i.Content));
         }
 
         private async Task SetUserInfo()
@@ -277,28 +205,19 @@ namespace TodoistDemo.ViewModels
             get { return _completedItemsAreVisible; }
             set
             {
-                if (value == _completedItemsAreVisible) return;
                 _completedItemsAreVisible = value;
-                NotifyOfPropertyChange(() => CompletedItemsAreVisible);
+                _taskManager.CompletedItemsAreVisible = value;
             }
         }
 
-        private bool TaskIsVisible(BindableItem item)
+        private async Task HandleInvalidToken(Exception exception)
         {
-            return (item.Checked == CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(item.Content);
-        }
-
-        private void Insert(BindableItem bindableItem, ReactiveList<BindableItem> items)
-        {
-            for (int index = 0; index < items.Count; index++)
-            {
-                if (string.CompareOrdinal(items[index].Content.ToLower(), bindableItem.Content.ToLower()) > 0)
-                {
-                    items.Insert(index, bindableItem);
-                    return;
-                }
-            }
-            items.Add(bindableItem);
+            AuthToken = string.Empty;
+            ItemsChangedDisposable?.Dispose();
+            Items.Clear();
+            var apiException = exception as ApiException;
+            var errorMessage = apiException != null ? apiException.ErrorMessage : exception.Message;
+            await new MessageDialog("Sync failed with error:" + errorMessage).ShowAsync();
         }
     }
 }

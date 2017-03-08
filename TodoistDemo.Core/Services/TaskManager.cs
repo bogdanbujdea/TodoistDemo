@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using ReactiveUI;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Communication.WebServices;
 using TodoistDemo.Core.Storage.Database;
@@ -85,6 +86,73 @@ namespace TodoistDemo.Core.Services
             var syncData = await _webSyncService.RetrieveAllItemsAsync(commands);
             await UpdateDatabase(syncData);
             return syncData.Items.Select(i => i.ToBindableItem()).ToList();
+        }
+
+        public async Task UpdateItems(ReactiveList<BindableItem> displayedItems, List<BindableItem> syncedItems = null)
+        {
+            if (displayedItems.Count == 0)
+            {
+                Expression<Func<Item, bool>> exp = item => TaskIsVisible(item.ToBindableItem());
+                var storedTasks = (await RetrieveTasksFromDbAsync(exp));
+                displayedItems.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
+            }
+            var items = syncedItems ?? await RetrieveTasksFromWebAsync();
+            RemoveItems(displayedItems, items);
+            AddItems(displayedItems, items);
+        }
+
+        public bool CompletedItemsAreVisible { get; set; }
+        public ReactiveList<BindableItem> Items { get; set; }
+
+        private void AddItems(ReactiveList<BindableItem> displayedItems, List<BindableItem> itemsToAdd)
+        {
+            var visibleItems = GetItemsToInsert(itemsToAdd).Distinct();
+            foreach (var item in visibleItems)
+            {
+                var existingItem = displayedItems.FirstOrDefault(i => i.Id == item.Id);
+                if (existingItem != null)
+                {
+                    var index = displayedItems.IndexOf(existingItem);
+                    displayedItems[index] = item;
+                }
+                else Insert(item, displayedItems);
+            }
+        }
+
+        private void RemoveItems(ReactiveList<BindableItem> displayedItems, List<BindableItem> items)
+        {
+            foreach (var item in GetItemsToRemove(items))
+            {
+                var existingItem = displayedItems.FirstOrDefault(i => i.Id == item.Id);
+                displayedItems.Remove(existingItem);
+            }
+        }
+
+        private IEnumerable<BindableItem> GetItemsToInsert(List<BindableItem> items)
+        {
+            return items.Where(TaskIsVisible);
+        }
+
+        private IEnumerable<BindableItem> GetItemsToRemove(List<BindableItem> items)
+        {
+            return items.Where(i => (i.Checked != CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(i.Content));
+        }
+        private void Insert(BindableItem bindableItem, ReactiveList<BindableItem> items)
+        {
+            for (int index = 0; index < items.Count; index++)
+            {
+                if (string.CompareOrdinal(items[index].Content.ToLower(), bindableItem.Content.ToLower()) > 0)
+                {
+                    items.Insert(index, bindableItem);
+                    return;
+                }
+            }
+            items.Add(bindableItem);
+        }
+
+        private bool TaskIsVisible(BindableItem item)
+        {
+            return (item.Checked == CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(item.Content);
         }
     }
 }
