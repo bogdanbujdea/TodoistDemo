@@ -1,7 +1,7 @@
 ﻿using System;
 using Windows.Storage;
 
-namespace TodoistDemo.Core.Storage
+namespace TodoistDemo.Core.Storage.LocalSettings
 {
     public class AppSettings : IAppSettings
     {

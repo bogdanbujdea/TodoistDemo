@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TodoistDemo.Core.Validation.Reports.Operation
+﻿namespace TodoistDemo.Core.Validation.Reports
 {
     public class BasicReport
     {

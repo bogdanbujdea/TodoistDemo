@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reactive.Disposables;
@@ -13,6 +12,7 @@ using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
 using TodoistDemo.Core.Storage;
 using TodoistDemo.Core.Storage.Database;
+using TodoistDemo.Core.Storage.LocalSettings;
 
 namespace TodoistDemo.ViewModels
 {
@@ -27,7 +27,8 @@ namespace TodoistDemo.ViewModels
         private string _username;
         private bool _completedItemsAreVisible;
         private ReactiveList<BindableItem> _changedItems;
-        private IDisposable ItemsChangedDisposable;
+        private IDisposable _itemsChangedDisposable;
+        private int _updateTimeout;
 
         public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository, IAppSettings appSettings)
         {
@@ -41,44 +42,36 @@ namespace TodoistDemo.ViewModels
         protected override async void OnActivate()
         {
             base.OnActivate();
+            _updateTimeout = 10;
             AuthToken = _appSettings.GetData<string>(SettingsKey.UserToken);
 
             if (string.IsNullOrWhiteSpace(AuthToken)) return;
-            IsBusy = true;
-            try
-            {
-                await UpdateItems();
-                await Sync();
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await Sync();
         }
 
         private void ListenToItemsChanged()
         {
-            _changedItems = new ReactiveList<BindableItem> { ChangeTrackingEnabled = true };
+            _changedItems = new ReactiveList<BindableItem> {ChangeTrackingEnabled = true};
             Items.ChangeTrackingEnabled = true;
             _changedItems.CountChanged
-                .Buffer(TimeSpan.FromSeconds(10), 5) //we sync after 10 seconds or when 5 items are changed
+                .Buffer(TimeSpan.FromSeconds(_updateTimeout), 5) //we sync after 10 seconds or when 5 items are changed
                 .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(async list =>
                 {
                     if (list.Count == 0)
                     {
-                        await UpdateItems();
+                        await _taskManager.UpdateItems(Items);
                         return;
                     }
                     await SynchronizeModifiedTasks();
                 });
-            ItemsChangedDisposable = Items.ItemChanged
+            _itemsChangedDisposable = Items.ItemChanged
                 .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(args =>
-               {
-                   Items.Remove(args.Sender);
-                   _changedItems.Add(args.Sender);
-               });
+                {
+                    Items.Remove(args.Sender);
+                    _changedItems.Add(args.Sender);
+                });
         }
 
         private async Task SynchronizeModifiedTasks()
@@ -89,7 +82,7 @@ namespace TodoistDemo.ViewModels
             try
             {
                 var syncedItems = await _taskManager.ToggleItems(changedItems);
-                await UpdateItems(syncedItems);
+                await _taskManager.UpdateItems(Items, syncedItems);
             }
             catch (Exception exception)
             {
@@ -114,9 +107,9 @@ namespace TodoistDemo.ViewModels
                     return;
                 }
                 _appSettings.SetData(SettingsKey.UserToken, AuthToken);
-                if (ItemsChangedDisposable == null || (ItemsChangedDisposable as CompositeDisposable)?.Count == 0)
+                if (_itemsChangedDisposable == null || (_itemsChangedDisposable as CompositeDisposable)?.Count == 0)
                     ListenToItemsChanged();
-                await UpdateItems();
+                await _taskManager.UpdateItems(Items);
                 await SetUserInfo();
             }
             catch (Exception ex)
@@ -139,7 +132,7 @@ namespace TodoistDemo.ViewModels
                 NotifyOfPropertyChange(() => Items);
             }
         }
-        
+
         public async Task ToggleCompletedTasks()
         {
             Expression<Func<Item, bool>> exp = item => item.Checked == CompletedItemsAreVisible;
@@ -181,18 +174,6 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        private async Task UpdateItems(List<BindableItem> syncedItems = null)
-        {
-            try
-            {
-                await _taskManager.UpdateItems(Items, syncedItems);
-            }
-            catch (Exception exception)
-            {
-                await HandleInvalidToken(exception);
-            }
-        }
-
         private async Task SetUserInfo()
         {
             var user = await _userRepository.GetUser();
@@ -213,7 +194,7 @@ namespace TodoistDemo.ViewModels
         private async Task HandleInvalidToken(Exception exception)
         {
             AuthToken = string.Empty;
-            ItemsChangedDisposable?.Dispose();
+            _itemsChangedDisposable?.Dispose();
             Items.Clear();
             var apiException = exception as ApiException;
             var errorMessage = apiException != null ? apiException.ErrorMessage : exception.Message;

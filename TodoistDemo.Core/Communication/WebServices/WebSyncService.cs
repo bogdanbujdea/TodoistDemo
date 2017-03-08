@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Storage;
+using TodoistDemo.Core.Storage.LocalSettings;
 
 namespace TodoistDemo.Core.Communication.WebServices
 {

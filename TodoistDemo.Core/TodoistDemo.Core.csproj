@@ -137,17 +137,15 @@
     <Compile Include="Storage\Database\IUserRepository.cs" />
     <Compile Include="Storage\Database\TodoistContext.cs" />
     <Compile Include="Storage\Database\UserRepository.cs" />
-    <Compile Include="Storage\AppSettings.cs" />
-    <Compile Include="Storage\IAppSettings.cs" />
-    <Compile Include="Storage\SettingsKey.cs" />
+    <Compile Include="Storage\LocalSettings\AppSettings.cs" />
+    <Compile Include="Storage\LocalSettings\IAppSettings.cs" />
+    <Compile Include="Storage\LocalSettings\SettingsKey.cs" />
     <Compile Include="Validation\Reports\BasicReport.cs" />
     <Compile Include="Validation\Reports\Web\BasicWebReport.cs" />
     <Compile Include="Validation\Reports\Web\FailedRequest.cs" />
     <EmbeddedResource Include="Properties\TodoistDemo.Core.rd.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Storage\LocalSettings\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Reference Include="ReactiveUI">
       <HintPath>..\..\..\..\..\.nuget\packages\reactiveui-core\7.2.0\lib\UAP10\ReactiveUI.dll</HintPath>

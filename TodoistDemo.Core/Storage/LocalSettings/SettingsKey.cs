@@ -1,4 +1,4 @@
-namespace TodoistDemo.Core.Storage
+namespace TodoistDemo.Core.Storage.LocalSettings
 {
     public enum SettingsKey
     {

@@ -10,6 +10,7 @@ using TodoistDemo.Core.Communication.WebServices;
 using TodoistDemo.Core.Services;
 using TodoistDemo.Core.Storage;
 using TodoistDemo.Core.Storage.Database;
+using TodoistDemo.Core.Storage.LocalSettings;
 using TodoistDemo.ViewModels;
 using TodoistDemo.Views;
 

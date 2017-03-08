@@ -1,5 +1,4 @@
 ﻿using Windows.Web.Http;
-using TodoistDemo.Core.Validation.Reports.Operation;
 
 namespace TodoistDemo.Core.Validation.Reports.Web
 {
