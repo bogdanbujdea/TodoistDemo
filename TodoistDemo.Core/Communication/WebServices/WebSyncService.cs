@@ -42,7 +42,9 @@ namespace TodoistDemo.Core.Communication.WebServices
                 _appSettings.SetData(SettingsKey.SyncToken, syncData.SyncToken);
                 return syncData;
             }
-            throw new ApiException(basicWebReport.FailedRequestInfo.ErrorMessage);
+            if (basicWebReport.FailedRequestInfo != null)
+                throw new ApiException(basicWebReport.FailedRequestInfo.ErrorMessage);
+            throw new ApiException("Please check your internet connection and try again");
         }
     }
 }

@@ -92,12 +92,21 @@ namespace TodoistDemo.Core.Services
         {
             if (displayedItems.Count == 0)
             {
-                var storedTasks = (await RetrieveTasksFromDbAsync(item => TaskIsVisible(item.ToBindableItem()));
+                var storedTasks = await RetrieveTasksFromDbAsync(item => TaskIsVisible(item.ToBindableItem()));
                 displayedItems.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
-            var items = syncedItems ?? await RetrieveTasksFromWebAsync();
-            RemoveItems(displayedItems, items);
-            AddItems(displayedItems, items);
+            try
+            {
+                var items = syncedItems ?? await RetrieveTasksFromWebAsync();
+                RemoveItems(displayedItems, items);
+                AddItems(displayedItems, items);
+            }
+            catch (Exception e)
+            {
+                displayedItems.Clear();
+                displayedItems.AddRange(await RetrieveTasksFromDbAsync(item => TaskIsVisible(item.ToBindableItem())));
+                throw e;
+            }
         }
 
         public bool CompletedItemsAreVisible { get; set; }

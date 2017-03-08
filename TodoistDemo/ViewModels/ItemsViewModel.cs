@@ -27,6 +27,7 @@ namespace TodoistDemo.ViewModels
         private ReactiveList<BindableItem> _changedItems;
         private IDisposable _itemsChangedDisposable;
         private int _updateTimeout;
+        private IDisposable _itemsCountChangedDisposable;
 
         public ItemsViewModel(ITaskManager taskManager, IUserRepository userRepository, IAppSettings appSettings)
         {
@@ -49,19 +50,28 @@ namespace TodoistDemo.ViewModels
 
         private void ListenToItemsChanged()
         {
-            _changedItems = new ReactiveList<BindableItem> {ChangeTrackingEnabled = true};
+            _changedItems = new ReactiveList<BindableItem> { ChangeTrackingEnabled = true };
             Items.ChangeTrackingEnabled = true;
-            _changedItems.CountChanged
+            _itemsCountChangedDisposable = _changedItems.CountChanged
                 .Buffer(TimeSpan.FromSeconds(_updateTimeout), 5) //we sync after 10 seconds or when 5 items are changed
                 .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(async list =>
                 {
-                    if (list.Count == 0)
+                    try
                     {
-                        await _taskManager.UpdateItems(Items);
-                        return;
+                        if (list.Count == 0)
+                        {
+                            await _taskManager.UpdateItems(Items);
+                            return;
+                        }
+                        await SynchronizeModifiedTasks();
                     }
-                    await SynchronizeModifiedTasks();
+                    catch (ApiException e)
+                    {
+                        _itemsChangedDisposable.Dispose();
+                        _itemsCountChangedDisposable.Dispose();
+                        await new MessageDialog(e.ErrorMessage).ShowAsync();
+                    }
                 });
             _itemsChangedDisposable = Items.ItemChanged
                 .ObserveOn(SynchronizationContext.Current)
@@ -190,9 +200,7 @@ namespace TodoistDemo.ViewModels
 
         private async Task HandleInvalidToken(Exception exception)
         {
-            AuthToken = string.Empty;
             _itemsChangedDisposable?.Dispose();
-            Items.Clear();
             var apiException = exception as ApiException;
             var errorMessage = apiException != null ? apiException.ErrorMessage : exception.Message;
             await new MessageDialog("Sync failed with error:" + errorMessage).ShowAsync();
