@@ -30,7 +30,20 @@ namespace TodoistDemo.Views
                 .ObserveOn(context)
                 .Subscribe(async token =>
                 {
+                    if (string.IsNullOrWhiteSpace(token) || token.Length < 10) //don't know if token length can be different from 40
+                    {
+                        return;
+                    }
                     await ViewModel.Sync();
+                });
+
+            this.WhenAnyValue(x => x.ViewModel.IsBusy)
+                .Throttle(TimeSpan.FromSeconds(1))
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(busy =>
+                {
+                    LoadingGrid.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+                    ProgressIndicator.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
                 });
         }
 

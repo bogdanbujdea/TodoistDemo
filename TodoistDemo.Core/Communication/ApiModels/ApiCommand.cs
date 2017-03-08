@@ -18,7 +18,5 @@ namespace TodoistDemo.Core.Communication.ApiModels
 
         [JsonProperty(PropertyName = "uuid")]
         public string Id { get; set; }
-
-
     }
 }

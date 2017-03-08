@@ -32,7 +32,7 @@ namespace TodoistDemo
         private async void AppUnhandledException(object sender, Windows.UI.Xaml.UnhandledExceptionEventArgs e)
         {
             e.Handled = true;
-            await new MessageDialog("A aparut o eroare, va rugam reincercati " + e.Exception.Message).ShowAsync();
+            await new MessageDialog("An unhandled error has occurred. Please try again! " + e.Exception.Message).ShowAsync();
         }
 
         protected override void Configure()
