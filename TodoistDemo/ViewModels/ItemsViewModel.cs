@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
@@ -10,7 +9,6 @@ using ReactiveUI;
 using TodoistDemo.Core.Communication;
 using TodoistDemo.Core.Communication.ApiModels;
 using TodoistDemo.Core.Services;
-using TodoistDemo.Core.Storage;
 using TodoistDemo.Core.Storage.Database;
 using TodoistDemo.Core.Storage.LocalSettings;
 
@@ -135,8 +133,7 @@ namespace TodoistDemo.ViewModels
 
         public async Task ToggleCompletedTasks()
         {
-            Expression<Func<Item, bool>> exp = item => item.Checked == CompletedItemsAreVisible;
-            var allTasks = await _taskManager.RetrieveTasksFromDbAsync(exp);
+            var allTasks = await _taskManager.RetrieveTasksFromDbAsync(item => item.Checked == CompletedItemsAreVisible);
             Items.Clear();
             Items.AddRange(allTasks);
         }

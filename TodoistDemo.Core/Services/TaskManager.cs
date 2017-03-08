@@ -92,8 +92,7 @@ namespace TodoistDemo.Core.Services
         {
             if (displayedItems.Count == 0)
             {
-                Expression<Func<Item, bool>> exp = item => TaskIsVisible(item.ToBindableItem());
-                var storedTasks = (await RetrieveTasksFromDbAsync(exp));
+                var storedTasks = (await RetrieveTasksFromDbAsync(item => TaskIsVisible(item.ToBindableItem()));
                 displayedItems.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
             var items = syncedItems ?? await RetrieveTasksFromWebAsync();
