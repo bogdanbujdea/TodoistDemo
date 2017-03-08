@@ -36,7 +36,7 @@ namespace TodoistDemo.Core.Storage.Database
             };
         }
 
-        public static BindableItem ToItem(this Item item)
+        public static BindableItem ToBindableItem(this Item item)
         {
             return new BindableItem
             {

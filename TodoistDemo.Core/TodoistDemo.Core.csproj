@@ -125,6 +125,8 @@
     <Compile Include="Communication\ApiException.cs" />
     <Compile Include="Communication\WebServices\IWebSyncService.cs" />
     <Compile Include="Communication\ApiModels\SyncData.cs" />
+    <Compile Include="Communication\ApiModels\ApiCommand.cs" />
+    <Compile Include="Communication\ApiModels\CommandArguments.cs" />
     <Compile Include="Services\ITaskManager.cs" />
     <Compile Include="Services\TaskManager.cs" />
     <Compile Include="Storage\Database\Item.cs" />

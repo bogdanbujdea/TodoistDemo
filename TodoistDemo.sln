@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoistDemo", "TodoistDemo\TodoistDemo.csproj", "{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B4EB2E78-3D9C-4527-BC28-78AB14D93C90} = {B4EB2E78-3D9C-4527-BC28-78AB14D93C90}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoistDemo.Core", "TodoistDemo.Core\TodoistDemo.Core.csproj", "{B4EB2E78-3D9C-4527-BC28-78AB14D93C90}"
 EndProject
@@ -20,6 +23,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}.Debug|Any CPU.Build.0 = Debug|x86
+		{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}.Debug|Any CPU.Deploy.0 = Debug|x86
 		{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}.Debug|ARM.ActiveCfg = Debug|ARM
 		{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}.Debug|ARM.Build.0 = Debug|ARM
 		{FF9EB6A8-6DC2-4271-88C4-DDA08D7EE6BE}.Debug|ARM.Deploy.0 = Debug|ARM

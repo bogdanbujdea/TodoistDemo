@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Reactive.Linq;
-using Windows.UI.Core;
+using System.Threading;
 using Windows.UI.Xaml;
-using Caliburn.Micro;
 using ReactiveUI;
 using TodoistDemo.ViewModels;
 
 namespace TodoistDemo.Views
 {
-    public sealed partial class ItemsView: IViewFor<ItemsViewModel>
+    public sealed partial class ItemsView : IViewFor<ItemsViewModel>
     {
         public ItemsView()
         {
@@ -19,16 +18,19 @@ namespace TodoistDemo.Views
         private void ViewLoaded(object sender, RoutedEventArgs e)
         {
             ViewModel = DataContext as ItemsViewModel;
+            CreateBindings();
+        }
+
+        private void CreateBindings()
+        {
+            var context = SynchronizationContext.Current;
             this.WhenAnyValue(view => view.AuthToken.Text)
                 .Where(token => string.IsNullOrWhiteSpace(token) == false)
                 .Throttle(TimeSpan.FromSeconds(3))
-                .DoWhile(() => string.IsNullOrWhiteSpace(ViewModel.Username))
+                .ObserveOn(context)
                 .Subscribe(async token =>
                 {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-                    {
-                        await ViewModel.Sync();
-                    });
+                    await ViewModel.Sync();
                 });
         }
 

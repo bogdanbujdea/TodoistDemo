@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
 using ReactiveUI;
@@ -46,12 +48,23 @@ namespace TodoistDemo.ViewModels
             }
             Items.ChangeTrackingEnabled = true;
             Items.ItemChanged
-                .Throttle(TimeSpan.FromSeconds(3))
-                .SubscribeOnDispatcher()
+                .Buffer(TimeSpan.FromSeconds(3), 3)
+                .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(async args =>
             {
-                await ToggleTask(args.Sender);
+                await ToggleTasks(args.Select(s => s.Sender).ToList());
             });
+        }
+
+        private async Task ToggleTasks(List<BindableItem> items)
+        {
+            if (items?.Count == 0)
+            {
+                await UpdateItems();
+                return;
+            }
+            var syncedItems = await _taskManager.ToggleItems(items);
+            await UpdateItems(syncedItems);
         }
 
         public async Task Sync()
@@ -78,14 +91,15 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        private async Task UpdateItems()
+        private async Task UpdateItems(List<BindableItem> syncedItems = null)
         {
             if (Items.Count == 0)
             {
-                var storedTasks = (await _taskManager.RetrieveTasksAsync());
+                Expression<Func<Item, bool>> exp = item => TaskIsVisible(item.ToBindableItem());
+                var storedTasks = (await _taskManager.RetrieveTasksFromDbAsync(exp));
                 Items.AddRange(storedTasks.Where(TaskIsVisible).OrderBy(i => i.Content.ToLower()));
             }
-            var items = await _taskManager.RetrieveTasksFromWebAsync();
+            var items = syncedItems ?? await _taskManager.RetrieveTasksFromWebAsync();
             RemoveItems(items);
             AddItems(items);
         }
@@ -188,15 +202,10 @@ namespace TodoistDemo.ViewModels
 
         public async Task ToggleCompletedTasks()
         {
-            var allTasks = await _taskManager.RetrieveTasksAsync();
+            Expression<Func<Item, bool>> exp = item => item.Checked == CompletedItemsAreVisible;
+            var allTasks = await _taskManager.RetrieveTasksFromDbAsync(exp);
             Items.Clear();
-            Items.AddRange(allTasks.Where(t => t.Checked == CompletedItemsAreVisible));
-        }
-
-        public async Task ToggleTask(BindableItem bindableItem)
-        {
-            await _taskManager.ToggleItem(bindableItem);
-            Items.Remove(bindableItem);
+            Items.AddRange(allTasks);
         }
 
         public bool CompletedItemsAreVisible
@@ -210,9 +219,9 @@ namespace TodoistDemo.ViewModels
             }
         }
 
-        private bool TaskIsVisible(BindableItem i)
+        private bool TaskIsVisible(BindableItem item)
         {
-            return (i.Checked == CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(i.Content);
+            return (item.Checked == CompletedItemsAreVisible) && !string.IsNullOrWhiteSpace(item.Content);
         }
 
         private void Insert(BindableItem bindableItem, ReactiveList<BindableItem> items)
