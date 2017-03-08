@@ -140,8 +140,7 @@
     <Compile Include="Storage\AppSettings.cs" />
     <Compile Include="Storage\IAppSettings.cs" />
     <Compile Include="Storage\SettingsKey.cs" />
-    <Compile Include="Validation\Reports\Operation\BasicReport.cs" />
-    <Compile Include="Validation\Reports\Operation\ValidationReport.cs" />
+    <Compile Include="Validation\Reports\BasicReport.cs" />
     <Compile Include="Validation\Reports\Web\BasicWebReport.cs" />
     <Compile Include="Validation\Reports\Web\FailedRequest.cs" />
     <EmbeddedResource Include="Properties\TodoistDemo.Core.rd.xml" />

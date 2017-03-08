@@ -61,7 +61,7 @@ namespace TodoistDemo.ViewModels
             _changedItems = new ReactiveList<BindableItem> { ChangeTrackingEnabled = true };
             Items.ChangeTrackingEnabled = true;
             _changedItems.CountChanged
-                .Buffer(TimeSpan.FromSeconds(10), 5)
+                .Buffer(TimeSpan.FromSeconds(10), 5) //we sync after 10 seconds or when 5 items are changed
                 .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(async list =>
                 {
